@@ -1,4 +1,6 @@
-The source is from www.github.com/Peien429/BotDGT​
+Please change branch to `TopGate`
+
+The source is from www.github.com/Peien429/BotDGT​, only for Academic exchange.
 
 # BotDGT: Dynamicity-aware Social Network Bot Detection with Dynamic Graph Transformers
 

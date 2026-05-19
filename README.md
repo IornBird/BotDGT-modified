@@ -1,4 +1,4 @@
-The source is from www.github.com/Peien429/BotDGT​
+The source is from www.github.com/Peien429/BotDGT​, only for Academic exchange.
 
 # BotDGT: Dynamicity-aware Social Network Bot Detection with Dynamic Graph Transformers
 
@@ -14,6 +14,93 @@ BotDGT is a framework that leverages the dynamic nature of social networks to en
 * torch==1.13.0
 
 ## Quick Start
+
+### Environment Setup
+
+> This part is new 
+
+Please first install [Anaconda](https://www.anaconda.com/download) unless your computer already:
+
+- Python is 3.10
+
+- PyTorch is 1.13
+
+- CUDA is 11.7
+
+**Create and go into Anaconda environment**
+
+```shell
+conda create -n oldtorch python=3.10 -y
+conda activate oldtorch
+```
+
+**End and remove Anaconda environment if something goes wrong**
+
+```shell
+conda deactivate
+conda env remove --name oldtorch -y
+```
+
+**Install dependencies**
+
+Do NOT install with `requirements.txt`
+
+```shell
+python -m pip install --upgrade pip
+
+pip install pytorch-lightning==2.0.4
+
+pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117
+python -c "import torch; print(torch.__version__)"
+
+pip install torch-scatter==2.1.1+pt113cu117 torch-sparse==0.6.17+pt113cu117 torch-cluster==1.6.1+pt113cu117 torch-spline-conv==1.2.2+pt113cu117 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html
+python -c "import torch; import torch_scatter; print(torch.__version__)"
+
+pip install torch-geometric==2.1.0
+```
+
+**Test whether your GPU(CUDA) works for current python**
+
+```python
+import torch
+import torch_geometric
+import torch_scatter
+
+print(torch.__version__)
+print(torch.cuda.is_available())
+
+x = torch.tensor([1,2,3]).cuda()
+print(x)
+```
+
+Expected output:
+
+```
+1.13.0+cu117
+True
+tensor([1, 2, 3], device='cuda:0')
+```
+
+**Test whether BotDGT works**
+
+```shell
+# not only "smoke_test.py" because it might run in base environment.
+python -m smoke_test.py
+```
+
+Expected output (It might include some warnings):
+
+```
+OK: imported torch
+torch.__version__ = 1.13.0+cu117
+OK: imported torch_geometric
+OK: imported torch_geometric.nn
+OK: imported models.model
+num_time_steps:  3
+OK: BotDyGNN instantiated
+
+Smoke test completed
+```
 
 ### Dataset Preparation
 

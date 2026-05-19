@@ -1,0 +1,33 @@
+# please install anaconda first
+# following code will create environment and dependencies.
+conda create -n oldtorch python=3.10 -y
+conda activate oldtorch
+
+pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117
+
+pip install torch-scatter==2.1.1+pt113cu117 torch-sparse==0.6.17+pt113cu117 torch-cluster==1.6.1+pt113cu117 torch-spline-conv==1.2.2+pt113cu117 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html
+
+pip install torch-geometric==2.1.0
+pip install pytorch-lightning==2.0.4
+
+
+# smoke test (ensure the program works)
+python -u smoke_test.py
+
+
+# test whether your GPU(CUDA) works for current python
+# this should run in python
+import torch
+import torch_geometric
+import torch_scatter
+
+print(torch.__version__)
+print(torch.cuda.is_available())
+
+x = torch.tensor([1,2,3]).cuda()
+print(x)
+
+
+# commands if conda environment goes wrong
+conda deactivate
+conda env remove --name oldtorch -y

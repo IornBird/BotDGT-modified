@@ -12,7 +12,6 @@ from pytorch_lightning import seed_everything
 class Trainer:
     def __init__(self, args):
         self.args = args
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='mean')
         self.dataset = Dataset(self.args.dataset_name, self.args.interval, self.args.batch_size, self.args.seed,
                                self.args.window_size, self.args.device)
         self.des_tensor, self.tweets_tensor, self.num_prop, self.category_prop, self.labels = self.dataset.des_tensor, self.dataset.tweets_tensor, self.dataset.num_prop, self.dataset.category_prop, self.dataset.labels
@@ -22,6 +21,24 @@ class Trainer:
         if self.args.dataset_name == 'Twibot-20':
             self.labels = torch.cat(
                 (self.labels, 3 * torch.ones(229580 - len(self.labels), device=self.args.device).long()), dim=0)
+        # set class-balanced weights for CrossEntropyLoss using training labels
+        try:
+            train_idx = self.dataset.train_idx.to(self.args.device)
+            train_labels = self.labels[train_idx]
+            total = float(train_labels.numel())
+            unique, counts = torch.unique(train_labels, return_counts=True)
+            num_classes = int(int(unique.max().item()) + 1)
+            weights = torch.ones(num_classes, dtype=torch.float32, device=self.args.device)
+            for u, c in zip(unique.tolist(), counts.tolist()):
+                if c > 0:
+                    weights[int(u)] = total / (2.0 * float(c))
+        except Exception:
+            weights = None
+
+        if weights is not None:
+            self.criterion = torch.nn.CrossEntropyLoss(weight=weights, reduction='mean')
+        else:
+            self.criterion = torch.nn.CrossEntropyLoss(reduction='mean')
         self.args.window_size = self.dataset.window_size
         self.model = BotDyGNN(self.args)
         self.model.to(self.args.device)

@@ -21,6 +21,8 @@ def parse_train_args(parser):
     parser.add_argument('--epoch', type=int, default=20, help='# epochs')
     parser.add_argument('--window_size', type=int, default=-1, help='Window size')
     parser.add_argument('--temporal_module_type', type=str, default='attention', choices=['attention', 'gru', 'lstm'], help='Temporal module type')
+    parser.add_argument('--use_topgate', action='store_true', help='Use TopGate structural layers')
+    parser.add_argument('--topgate_layers', type=int, default=2, help='Number of TopGate structural layers')
     return parser
 
 

@@ -3,6 +3,10 @@
 import torch
 import torch.nn as nn
 from models.GraphStructuralLayer import GraphStructuralLayer
+try:
+    from models.TopGateLayer import TopGateStack
+except Exception:
+    TopGateStack = None
 from models.GraphTemporalLayer import GraphTemporalLayer
 from models.NodeFeatureEmbeddingLayer import NodeFeatureEmbeddingLayer
 from models.PositionEmbeddingLayer import PositionEncodingClusteringCoefficient, PositionEncodingBidirectionalLinks
@@ -34,7 +38,11 @@ class BotDyGNN(nn.Module):
             one_snapshot_category_prop = all_snapshots_category_prop[t]
             x = self.node_feature_embedding_layer(one_snapshot_des_tensor, one_snapshot_tweet_tensor, one_snapshot_num_prop, one_snapshot_category_prop)
             one_snapshot_edge_index = all_snapshots_edge_index[t]
-            output = self.structural_layer(x, one_snapshot_edge_index)[:current_batch_size]
+            # If using TopGateStack, pass clustering coefficient for heterogeneity
+            if TopGateStack is not None and isinstance(self.structural_layer, TopGateStack):
+                output = self.structural_layer(x, one_snapshot_edge_index, clustering_coefficient=all_snapshots_clustering_coefficient[t])[:current_batch_size]
+            else:
+                output = self.structural_layer(x, one_snapshot_edge_index)[:current_batch_size]
             all_snapshots_structural_output.append(output)
         all_snapshots_structural_output = torch.stack(all_snapshots_structural_output, dim=1)
         if torch.any(torch.isnan(all_snapshots_structural_output)):
@@ -61,9 +69,12 @@ class BotDyGNN(nn.Module):
             hidden_dim=self.hidden_dim)
         position_encoding_bidirectional_links_ratio_layer = PositionEncodingBidirectionalLinks(
             hidden_dim=self.hidden_dim)
-        structural_layer = GraphStructuralLayer(hidden_dim=self.hidden_dim,
-                                                n_heads=self.structural_head_config,
-                                                dropout=self.structural_drop)
+        if getattr(self.args, 'use_topgate', False) and TopGateStack is not None:
+            structural_layer = TopGateStack(dim=self.hidden_dim, n_layers=getattr(self.args, 'topgate_layers', 2))
+        else:
+            structural_layer = GraphStructuralLayer(hidden_dim=self.hidden_dim,
+                                                    n_heads=self.structural_head_config,
+                                                    dropout=self.structural_drop)
         temporal_layer = GraphTemporalLayer(hidden_dim=self.hidden_dim,
                                             n_heads=self.temporal_head_config,
                                             dropout=self.temporal_drop,

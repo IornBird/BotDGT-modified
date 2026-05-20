@@ -3,6 +3,26 @@ import torch
 from torch_geometric.loader import NeighborLoader
 
 
+def _compute_bidirectional_ratio(edge_index: torch.LongTensor, num_nodes: int) -> torch.Tensor:
+    # compute ratio of reciprocal neighbors per node
+    src, dst = edge_index
+    nbrs = [set() for _ in range(num_nodes)]
+    for u, v in zip(src.tolist(), dst.tolist()):
+        nbrs[u].add(v)
+    ratios = torch.zeros(num_nodes, dtype=torch.float32)
+    for i in range(num_nodes):
+        k = len(nbrs[i])
+        if k == 0:
+            ratios[i] = 0.0
+            continue
+        rec = 0
+        for j in nbrs[i]:
+            if i in nbrs[j]:
+                rec += 1
+        ratios[i] = float(rec) / float(k)
+    return ratios
+
+
 def load_graphs(dataset_name, interval):
     assert interval in ['year', 'month', 'three_months', 'six_months', '15_months',
                         '18_months', '21_months', '24_months', '9_months']
@@ -50,6 +70,9 @@ class Dataset:
         self.window_size = window_size
         self.device = device
         self.graphs, self.graphs_file_name_list = load_graphs(dataset_name, interval)
+
+        # ensure topology metrics exist on graph objects (computed on CPU), before moving to device
+        self._ensure_topology_metrics()
 
         self.train_idx, self.val_idx, self.test_idx = load_split_index(dataset_name)
         self.labels = load_labels(dataset_name)
@@ -147,6 +170,48 @@ class Dataset:
             data_dict['all_exist_nodes']['data'], \
             data_dict['all_clustering_coefficient']['data'], \
             data_dict['all_bidirectional_links_ratio']['data']
+
+    def _ensure_topology_metrics(self):
+        """Compute and attach clustering coefficient and bidirectional ratio to graph objects if missing."""
+        try:
+            from utils.topology import compute_clustering_coefficient, compute_degree
+        except Exception:
+            compute_clustering_coefficient = None
+            compute_degree = None
+
+        for i, graph in enumerate(self.graphs):
+            # determine number of nodes
+            if hasattr(graph, 'num_nodes') and graph.num_nodes is not None:
+                num_nodes = int(graph.num_nodes)
+            elif hasattr(graph, 'x'):
+                num_nodes = int(graph.x.size(0))
+            else:
+                # fallback: infer from edge_index
+                num_nodes = int(int(graph.edge_index.max().item()) + 1) if graph.edge_index.numel() > 0 else 0
+
+            if num_nodes == 0:
+                continue
+
+            if not hasattr(graph, 'clustering_coefficient') and compute_clustering_coefficient is not None:
+                try:
+                    cc = compute_clustering_coefficient(graph.edge_index.cpu(), num_nodes).unsqueeze(-1)
+                    graph.clustering_coefficient = cc
+                except Exception:
+                    graph.clustering_coefficient = torch.zeros((num_nodes, 1), dtype=torch.float32)
+
+            if not hasattr(graph, 'bidirectional_links_ratio'):
+                try:
+                    br = _compute_bidirectional_ratio(graph.edge_index.cpu(), num_nodes).unsqueeze(-1)
+                    graph.bidirectional_links_ratio = br
+                except Exception:
+                    graph.bidirectional_links_ratio = torch.zeros((num_nodes, 1), dtype=torch.float32)
+
+            if not hasattr(graph, 'degree') and compute_degree is not None:
+                try:
+                    deg = compute_degree(graph.edge_index.cpu(), num_nodes).unsqueeze(-1)
+                    graph.degree = deg
+                except Exception:
+                    graph.degree = torch.zeros((num_nodes, 1), dtype=torch.long)
 
 
 class dataLoader():

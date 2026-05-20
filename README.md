@@ -47,16 +47,15 @@ Do NOT install with `requirements.txt`
 
 ```shell
 python -m pip install --upgrade pip
-
+# this one first for it will uninstall proper torch
 pip install pytorch-lightning==2.0.4
 
 pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117
-python -c "import torch; print(torch.__version__)"
 
 pip install torch-scatter==2.1.1+pt113cu117 torch-sparse==0.6.17+pt113cu117 torch-cluster==1.6.1+pt113cu117 torch-spline-conv==1.2.2+pt113cu117 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html
-python -c "import torch; import torch_scatter; print(torch.__version__)"
 
 pip install torch-geometric==2.1.0
+pip install 'numpy<2'
 ```
 
 **Test whether your GPU(CUDA) works for current python**
@@ -101,6 +100,19 @@ OK: BotDyGNN instantiated
 
 Smoke test completed
 ```
+
+**TopGate unit test**
+
+```shell
+python -u tests/test_topgate.py
+```
+
+Expected output (It might include some warnings):
+
+```
+ok
+```
+
 
 ### Dataset Preparation
 

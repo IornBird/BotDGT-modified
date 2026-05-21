@@ -118,6 +118,16 @@ ok
 
 The original datasets are available at [Twibot-20](https://github.com/BunsenFeng/TwiBot-20) and [Twibot-22](https://github.com/LuoUndergradXJTU/TwiBot-22). 
 
+### TwiBot-20 Stub Dataset
+
+If you do not have access to the full TwiBot-20 dataset, generate a tiny local stub for integration tests:
+
+```shell
+python scripts/make_synthetic_data.py --clean
+```
+
+The script writes TwiBot-20-compatible files under `data/Twibot-20/`, including `raw/node.json`, `raw/user.json`, processed tensors, split indices, edge tensors, and PyG graph snapshots. The data is synthetic and should only be used to verify the training/data-loading pipeline.
+
 For Twibot-20:
 
 1. Put `node.json` in the `\raw` folder. `node.json` is provided in the original dataset.

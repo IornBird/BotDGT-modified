@@ -29,7 +29,14 @@ def load_graphs(dataset_name, interval):
     assert dataset_name in ['Twibot-20', 'Twibot-22']
     interval_dict = {'year': 12, 'month': 1, 'three_months': 3, 'six_months': 6, '9_months': 9,
                      '18_months': 18, '15_months': 15, '21_months': 21, '24_months': 24}
-    files = os.listdir(r"./data/{}/graph_data/graphs".format(dataset_name))
+    files = [
+        file for file in os.listdir(r"./data/{}/graph_data/graphs".format(dataset_name))
+        if file.endswith('.pt')
+    ]
+    if len(files) == 0:
+        raise FileNotFoundError(
+            "No graph snapshot .pt files found in ./data/{}/graph_data/graphs".format(dataset_name)
+        )
     files = sorted(files)
     file_name = []
     for index in range(-1, -len(files) - 1, -interval_dict[interval]):
